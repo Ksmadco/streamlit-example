@@ -1,40 +1,42 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-"""
-# Welcome to Streamlit!
+# Función para cargar los datos
+@st.cache
+def load_data():
+    data = pd.read_csv("path_to_your_file.csv")  # Asegúrate de cambiar esto por la ruta correcta del archivo
+    return data
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+# Cargar datos
+data = load_data()
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+# Título de la aplicación
+st.title('Visualización de Datos de Películas')
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+# Visualización de tendencias de recaudación y calificaciones a lo largo de los años
+st.header("Tendencias de Recaudación y Calificaciones por Año")
+fig, ax = plt.subplots()
+sns.lineplot(data=data, x='Year', y='Revenue (Millions)', ax=ax, label='Recaudación')
+sns.lineplot(data=data, x='Year', y='Rating', ax=ax, label='Calificación', color='red')
+ax.set_ylabel('Recaudación / Calificación')
+st.pyplot(fig)
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+# Mapa de calor para correlaciones
+st.header("Correlación entre Rating, Metascore y Revenue")
+corr_matrix = data[['Rating', 'Metascore', 'Revenue (Millions)']].corr()
+fig, ax = plt.subplots()
+sns.heatmap(corr_matrix, annot=True, ax=ax)
+st.pyplot(fig)
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+# Diagramas de dispersión
+st.header("Relación entre la Duración de las Películas y su Éxito")
+fig, ax = plt.subplots()
+sns.scatterplot(data=data, x='Runtime (Minutes)', y='Revenue (Millions)', ax=ax, label='Recaudación')
+sns.scatterplot(data=data, x='Runtime (Minutes)', y='Rating', ax=ax, label='Calificación', color='red')
+ax.legend(title='Variable')
+st.pyplot(fig)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
-
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+# Ejecutar la aplicación
+# Para ejecutar esta aplicación, guarda el código en un archivo, por ejemplo app.py, y en la terminal ejecuta: streamlit run app.py
