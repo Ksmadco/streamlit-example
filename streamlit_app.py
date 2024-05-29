@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # Función para cargar los datos
 @st.cache
 def load_data():
-    data = pd.read_csv("path_to_your_file.csv")  # Asegúrate de cambiar esto por la ruta correcta del archivo
+    data = pd.read_csv("IMDB-Movie-Data.csv.csv")  # Asegúrate de cambiar esto por la ruta correcta del archivo
     return data
 
 # Cargar datos
