@@ -1,42 +1,33 @@
+from openai import OpenAI
 import streamlit as st
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-# Función para cargar los datos
-@st.cache
-def load_data():
-    data = pd.read_csv("IMDB-Movie-Data.csv")  # Asegúrate de cambiar esto por la ruta correcta del archivo
-    return data
+st.title("ChatGPT-like clone")
 
-# Cargar datos
-data = load_data()
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Título de la aplicación
-st.title('Visualización de Datos de Películas')
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-3.5-turbo"
 
-# Visualización de tendencias de recaudación y calificaciones a lo largo de los años
-st.header("Tendencias de Recaudación y Calificaciones por Año")
-fig, ax = plt.subplots()
-sns.lineplot(data=data, x='Year', y='Revenue (Millions)', ax=ax, label='Recaudación')
-sns.lineplot(data=data, x='Year', y='Rating', ax=ax, label='Calificación', color='red')
-ax.set_ylabel('Recaudación / Calificación')
-st.pyplot(fig)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Mapa de calor para correlaciones
-st.header("Correlación entre Rating, Metascore y Revenue")
-corr_matrix = data[['Rating', 'Metascore', 'Revenue (Millions)']].corr()
-fig, ax = plt.subplots()
-sns.heatmap(corr_matrix, annot=True, ax=ax)
-st.pyplot(fig)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Diagramas de dispersión
-st.header("Relación entre la Duración de las Películas y su Éxito")
-fig, ax = plt.subplots()
-sns.scatterplot(data=data, x='Runtime (Minutes)', y='Revenue (Millions)', ax=ax, label='Recaudación')
-sns.scatterplot(data=data, x='Runtime (Minutes)', y='Rating', ax=ax, label='Calificación', color='red')
-ax.legend(title='Variable')
-st.pyplot(fig)
+if prompt := st.chat_input("What is up?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-# Ejecutar la aplicación
-# Para ejecutar esta aplicación, guarda el código en un archivo, por ejemplo app.py, y en la terminal ejecuta: streamlit run app.py
+    with st.chat_message("assistant"):
+        stream = client.chat.completions.create(
+            model=st.session_state["openai_model"],
+            messages=[
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
+            stream=True,
+        )
+        response = st.write_stream(stream)
+    st.session_state.messages.append({"role": "assistant", "content": response})
